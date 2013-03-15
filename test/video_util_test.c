@@ -122,7 +122,7 @@ static int test_transcode_do(test_util_s *util_s)
 	char test_output_file_path[128] = {0, };
 
 	memset(test_output_file_path, 0x00, sizeof(test_output_file_path));
-	snprintf(test_output_file_path, sizeof(test_output_file_path), "/opt/media/Videos/transcode_test_%d.mp4", util_s->idx);
+	snprintf(test_output_file_path, sizeof(test_output_file_path), "/opt/usr/media/Videos/transcode_test_%d.mp4", util_s->idx);
 
 	printf("g_start_time[%d] duration[%d] [%s]\n", util_s->start_time, util_s->duration, test_output_file_path);
 
@@ -142,7 +142,13 @@ int main(int argc, char *argv[])
 	int ret = VIDEO_UTIL_ERROR_NONE;
 	video_util_h video_h = NULL;
 	test_util_s *_util_s = NULL;
-	char * test_video_file_path = "/opt/usr/media/Videos/Color.mp4";
+	int cnt = argc -1;
+
+	if(cnt < 1)
+	{
+		printf("type file path plz. [%d]\n", cnt);
+		return 0;
+	}
 
 	ret = video_util_create(&video_h);
 	if(ret != VIDEO_UTIL_ERROR_NONE)
@@ -154,7 +160,7 @@ int main(int argc, char *argv[])
 	supported_spec_check(video_h);
 #endif
 
-	ret = video_util_set_file_path(video_h, test_video_file_path);
+	ret = video_util_set_file_path(video_h,  argv[1]);
 	ret = video_util_set_file_format(video_h, VIDEO_UTIL_FILE_FORMAT_3GP);
 	ret = video_util_set_video_codec(video_h, VIDEO_UTIL_VIDEO_CODEC_MPEG4);
 	ret = video_util_set_audio_codec(video_h, VIDEO_UTIL_AUDIO_CODEC_AAC);

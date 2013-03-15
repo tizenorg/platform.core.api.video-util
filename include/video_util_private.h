@@ -40,6 +40,7 @@ typedef struct
 typedef struct
 {
 	void *user_data;
+	video_util_transcoding_progress_cb transcode_progress_cb;
 	video_util_transcoding_completed_cb transcode_completed_cb;
 }video_util_cb_s;
 

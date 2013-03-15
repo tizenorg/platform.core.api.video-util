@@ -49,6 +49,7 @@ static bool __video_util_check_resolution(int width, int height);
 static bool __video_util_check_duration(int duration);
 static bool __video_util_check_fps(int fps);
 static video_util_error_e __video_util_error_convert(int error);
+static void __video_util_transcode_progress_cb(unsigned long current_position, unsigned long duration, void *user_data);
 static void __video_util_transcode_completed_cb(int error, void *user_data);
 static bool __video_util_type_callback(int codec_type, void *user_data);
 static int __video_util_foreach_supported_type(video_util_type_e type, video_util_supported_type_cb callback, void *user_data);
@@ -225,6 +226,19 @@ static video_util_error_e __video_util_error_convert(int error)
 		LOGE("INVALID_OPERATION(0x%08x)", VIDEO_UTIL_ERROR_INVALID_OPERATION);
 		return VIDEO_UTIL_ERROR_INVALID_OPERATION;
 	}
+}
+
+static void __video_util_transcode_progress_cb(unsigned long current_position, unsigned long duration, void *user_data)
+{
+	int error_value = VIDEO_UTIL_ERROR_NONE;
+	video_util_cb_s *_util_cb = (video_util_cb_s *)user_data;
+
+	if((_util_cb != NULL) && (_util_cb->transcode_progress_cb != NULL))
+	{
+		_util_cb->transcode_progress_cb(current_position, duration, _util_cb->user_data);
+	}
+
+	return;
 }
 
 static void __video_util_transcode_completed_cb(int error, void *user_data)
@@ -729,13 +743,14 @@ int video_util_start_transcoding(video_util_h handle, unsigned long start, unsig
 		video_util_cb_s *_util_cb = (video_util_cb_s*)calloc(1, sizeof(video_util_cb_s));
 		_util_cb->user_data = user_data;
 		_util_cb->transcode_completed_cb = completed_cb;
+		_util_cb->transcode_progress_cb = progress_cb;
 
 		if(_handle->accurate_mode)
 			accurate_mode = MM_SEEK_ACCURATE;
 		else
 			accurate_mode = MM_SEEK_INACCURATE;
 
-		ret = mm_transcode(_handle->transcode_h, _handle->width, _handle->height, _handle->fps, start, duration, accurate_mode, out_path, (mm_transcode_progress_callback)progress_cb, (mm_transcode_completed_callback)__video_util_transcode_completed_cb, (void *)_util_cb);
+		ret = mm_transcode(_handle->transcode_h, _handle->width, _handle->height, _handle->fps, start, duration, accurate_mode, out_path, (mm_transcode_progress_callback)__video_util_transcode_progress_cb, (mm_transcode_completed_callback)__video_util_transcode_completed_cb, (void *)_util_cb);
 
 		if(ret != MM_ERROR_NONE)
 		{

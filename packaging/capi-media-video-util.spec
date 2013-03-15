@@ -1,7 +1,7 @@
 Name:       capi-media-video-util
 Summary:    A Video Utility library in Tizen Native API
-Version:    0.1.5
-Release:    0
+Version:    0.1.6
+Release:    2
 Group:      System/Libraries
 License:    Apache License, Version 2.0
 Source0:    %{name}-%{version}.tar.gz

@@ -5,6 +5,7 @@ Release:    2
 Group:      System/Libraries
 License:    Apache License, Version 2.0
 Source0:    %{name}-%{version}.tar.gz
+Source1001: 	capi-media-video-util.manifest
 BuildRequires:  pkgconfig(dlog)
 BuildRequires:  pkgconfig(mm-common)
 BuildRequires:  pkgconfig(mm-transcode)
@@ -31,6 +32,7 @@ A Video Utility library in Tizen Native API (Developement)
 
 %prep
 %setup -q
+cp %{SOURCE1001} .
 
 %build
 MAJORVER=`echo %{version} | awk 'BEGIN {FS="."}{print $1}'`
@@ -47,11 +49,12 @@ cp -rf %{_builddir}/%{name}-%{version}/LICENSE.APLv2.0 %{buildroot}/%{_datadir}/
 %postun
 
 %files
-%manifest capi-media-video-util.manifest
+%manifest %{name}.manifest
 %{_libdir}/lib*.so.*
 %{_datadir}/license/%{name}
 
 %files devel
+%manifest %{name}.manifest
 %{_libdir}/lib*.so
 %{_libdir}/pkgconfig/*.pc
 %{_includedir}/media/*.h

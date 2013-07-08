@@ -1,0 +1,8 @@
+Change-Id: I3506feb3e06340250bb3936f24b7a790fbb93368
+Code-Review+2: Ryan Ware <ware@linux.intel.com>
+Verified+1: Ryan Ware <ware@linux.intel.com>
+Submitted-by: Ryan Ware <ware@linux.intel.com>
+Submitted-at: Mon, 08 Jul 2013 10:08:11 -0700
+Reviewed-on: https://review.tizen.org/gerrit/4424
+Project: platform/core/api/video-util
+Branch: refs/heads/tizen

@@ -20,7 +20,6 @@ A Video Utility library in Tizen Native API
 
 %package devel
 Summary:    A Video Utility library in Tizen Native API (Developement)
-Group:      TO_BE_FILLED
 Requires:   %{name} = %{version}-%{release}
 Requires:  pkgconfig(dlog)
 Requires:  pkgconfig(mm-common)

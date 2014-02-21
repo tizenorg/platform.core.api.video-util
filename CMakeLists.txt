@@ -39,7 +39,7 @@ SET(INC_DIR include)
 INCLUDE_DIRECTORIES(${INC_DIR})
 
 INCLUDE(FindPkgConfig)
-pkg_check_modules(${fw_name} REQUIRED ${dependents})
+pkg_check_modules(${fw_name} REQUIRED ${dependents} libtzplatform-config)
 FOREACH(flag ${${fw_name}_CFLAGS})
     SET(EXTRA_CFLAGS "${EXTRA_CFLAGS} ${flag}")
 ENDFOREACH(flag)

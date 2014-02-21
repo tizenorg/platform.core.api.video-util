@@ -10,6 +10,7 @@ BuildRequires:  pkgconfig(dlog)
 BuildRequires:  pkgconfig(mm-common)
 BuildRequires:  pkgconfig(mm-transcode)
 BuildRequires:  pkgconfig(capi-base-common)
+BuildRequires:  pkgconfig(libtzplatform-config)
 
 BuildRequires:  cmake
 BuildRequires:  gettext-devel
@@ -20,7 +21,6 @@ A Video Utility library in Tizen Native API
 
 %package devel
 Summary:    A Video Utility library in Tizen Native API (Developement)
-Group:      TO_BE_FILLED
 Requires:   %{name} = %{version}-%{release}
 Requires:  pkgconfig(dlog)
 Requires:  pkgconfig(mm-common)

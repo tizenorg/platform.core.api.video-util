@@ -20,6 +20,9 @@
 #include <glib.h>
 #include <video_util.h>
 
+// For Multi-user support
+#include <tzplatform_config.h>
+
 //#define CANCEL_TEST
 
 typedef struct
@@ -120,9 +123,11 @@ static int test_transcode_do(test_util_s *util_s)
 {
 	int ret = 0;
 	char test_output_file_path[128] = {0, };
+	const char *video_path = NULL;
 
 	memset(test_output_file_path, 0x00, sizeof(test_output_file_path));
-	snprintf(test_output_file_path, sizeof(test_output_file_path), "/opt/usr/media/Videos/transcode_test_%d.mp4", util_s->idx);
+	video_path = tzplatform_getenv(TZ_USER_VIDEOS);
+	snprintf(test_output_file_path, sizeof(test_output_file_path), "%s/transcode_test_%d.mp4", video_path, util_s->idx);
 
 	printf("g_start_time[%d] duration[%d] [%s]\n", util_s->start_time, util_s->duration, test_output_file_path);
 

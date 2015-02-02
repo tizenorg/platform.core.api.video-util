@@ -24,8 +24,8 @@ SET(service "media")
 SET(submodule "video-util")
 
 # for package file
-SET(dependents "dlog mm-transcode capi-base-common")
-SET(pc_dependents "capi-base-common")
+SET(dependents "dlog mm-transcode capi-base-common capi-system-info")
+SET(pc_dependents "capi-base-common capi-system-info")
 
 SET(fw_name "${project_prefix}-${service}-${submodule}")
 

@@ -1,7 +1,7 @@
 Name:       capi-media-video-util
 Summary:    A Video Utility library in Tizen Native API
-Version:    0.1.6
-Release:    2
+Version:    0.1.7
+Release:    5
 Group:      System/Libraries
 License:    Apache License, Version 2.0
 Source0:    %{name}-%{version}.tar.gz
@@ -10,6 +10,7 @@ BuildRequires:  pkgconfig(dlog)
 BuildRequires:  pkgconfig(mm-common)
 BuildRequires:  pkgconfig(mm-transcode)
 BuildRequires:  pkgconfig(capi-base-common)
+BuildRequires:  pkgconfig(capi-system-info)
 
 BuildRequires:  cmake
 BuildRequires:  gettext-devel

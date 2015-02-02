@@ -38,6 +38,7 @@
 #define VIDEO_UTIL_MINIMUM_DURATION		1000	/*1 sec*/
 #define VIDEO_UTIL_MINIMUM_FPS			5
 #define VIDEO_UTIL_MAXIMUM_FPS			30
+#define VIDEO_UTIL_MAXIMUM_BPS			4294967295UL
 
 static int __video_util_create_transcode_handle(video_util_s *handle);
 static int __video_util_destroy_transcode_handle(video_util_s *handle);
@@ -62,14 +63,18 @@ static int __video_util_create_transcode_handle(video_util_s *handle)
 	ret = mm_transcode_create(&transcode_h);
 	if(ret != MM_ERROR_NONE)
 	{
-		if(ret == MM_ERROR_INVALID_ARGUMENT)
+		if(ret == MM_ERROR_TRANSCODE_INVALID_VALUE)
 		{
-			LOGE("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
+			video_util_error("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
 			return VIDEO_UTIL_ERROR_INVALID_PARAMETER;
+		} else if(ret == MM_ERROR_TRANSCODE_NOT_SUPPORT_FORMAT)
+		{
+			video_util_error("NOT_SUPPORTED_FORMAT(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED_FORMAT);
+			return VIDEO_UTIL_ERROR_NOT_SUPPORTED_FORMAT;
 		}
 		else
 		{
-			LOGE("INVALID_OPERATION(0x%08x)", VIDEO_UTIL_ERROR_INVALID_OPERATION);
+			video_util_error("INVALID_OPERATION(0x%08x)", ret);
 			return VIDEO_UTIL_ERROR_INVALID_OPERATION;
 		}
 	}
@@ -77,19 +82,30 @@ static int __video_util_create_transcode_handle(video_util_s *handle)
 	ret = mm_transcode_prepare(transcode_h, handle->input_path, handle->file_format, handle->video_codec, handle->audio_codec);
 	if(ret != MM_ERROR_NONE)
 	{
-		if(ret == MM_ERROR_INVALID_ARGUMENT)
+		if(ret == MM_ERROR_TRANSCODE_INVALID_VALUE)
 		{
-			LOGE("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
-			return VIDEO_UTIL_ERROR_INVALID_PARAMETER;
+			video_util_error("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
+			ret = VIDEO_UTIL_ERROR_INVALID_PARAMETER;
+		} else if(ret == MM_ERROR_TRANSCODE_NOT_SUPPORT_FORMAT)
+		{
+			video_util_error("NOT_SUPPORTED_FORMAT(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED_FORMAT);
+			return VIDEO_UTIL_ERROR_NOT_SUPPORTED_FORMAT;
 		}
 		else
 		{
-			LOGE("INVALID_OPERATION(0x%08x)", VIDEO_UTIL_ERROR_INVALID_OPERATION);
-			return VIDEO_UTIL_ERROR_INVALID_OPERATION;
+			video_util_error("INVALID_OPERATION(0x%08x)", ret);
+			ret = VIDEO_UTIL_ERROR_INVALID_OPERATION;
 		}
 	}
 
-	handle->transcode_h = transcode_h;
+	if(ret == MM_ERROR_NONE)
+	{
+		handle->transcode_h = transcode_h;
+	}
+	else
+	{
+		__video_util_destroy_transcode_handle(handle);
+	}
 
 	return ret;
 }
@@ -102,10 +118,9 @@ static int __video_util_destroy_transcode_handle(video_util_s *handle)
 	if(handle->transcode_h)
 	{
 		ret = mm_transcode_destroy(handle->transcode_h);
-		LOGI("mm_transcode_destroy [%d]\n", ret);
 		if(ret != MM_ERROR_NONE)
 		{
-			LOGE("INVALID_OPERATION(0x%08x)", VIDEO_UTIL_ERROR_INVALID_OPERATION);
+			video_util_error("INVALID_OPERATION (0x%08x)", ret);
 			return VIDEO_UTIL_ERROR_INVALID_OPERATION;
 		}
 	}
@@ -124,7 +139,7 @@ int __video_util_check_transcode_is_busy(video_util_s * handle, bool *is_busy)
 		ret = mm_transcode_is_busy(handle->transcode_h, is_busy);
 		if(ret != MM_ERROR_NONE)
 		{
-			LOGE("INVALID_OPERATION(0x%08x)", VIDEO_UTIL_ERROR_INVALID_OPERATION);
+			video_util_error("INVALID_OPERATION(0x%08x)", ret);
 			return VIDEO_UTIL_ERROR_INVALID_OPERATION;
 		}
 	}
@@ -140,7 +155,7 @@ static bool __video_util_check_video_codec(video_util_video_codec_e video_codec)
 {
 	if((video_codec < 0) || (video_codec > VIDEO_UTIL_VIDEO_CODEC_NONE ))
 	{
-		LOGE("invalid video_codec [%d]", video_codec);
+		video_util_error("invalid video_codec [%d]", video_codec);
 		return false;
 	}
 
@@ -151,7 +166,7 @@ static bool __video_util_check_audio_codec(video_util_audio_codec_e audio_codec)
 {
 	if((audio_codec < 0) || (audio_codec > VIDEO_UTIL_AUDIO_CODEC_NONE ))
 	{
-		LOGE("invalid audio_codec [%d]", audio_codec);
+		video_util_error("invalid audio_codec [%d]", audio_codec);
 		return false;
 	}
 
@@ -162,7 +177,7 @@ static bool __video_util_check_file_format(video_util_file_format_e file_format)
 {
 	if((file_format < 0) || (file_format >= VIDEO_UTIL_FILE_FORMAT_MAX ))
 	{
-		LOGE("invalid file_format [%d]", file_format);
+		video_util_error("invalid file_format [%d]", file_format);
 		return false;
 	}
 
@@ -173,13 +188,13 @@ static bool __video_util_check_resolution(int width, int height)
 {
 	if(((width > 0) && (width < VIDEO_UTIL_MINIMUM_WIDTH)) || (width < 0))
 	{
-		LOGE("invalid width [%d]", width);
+		video_util_error("invalid width [%d]", width);
 		return false;
 	}
 
 	if(((height > 0) && (height < VIDEO_UTIL_MINIMUM_HEIGHT)) || (height < 0))
 	{
-		LOGE("invalid height [%d]", height);
+		video_util_error("invalid height [%d]", height);
 		return false;
 	}
 
@@ -190,7 +205,7 @@ static bool __video_util_check_duration(int duration)
 {
 	if(((duration > 0) && (duration < VIDEO_UTIL_MINIMUM_DURATION)) || (duration < 0))
 	{
-		LOGE("invalid duration [%d]", duration);
+		video_util_error("invalid duration [%d]", duration);
 		return false;
 	}
 
@@ -201,7 +216,7 @@ static bool __video_util_check_fps(int fps)
 {
 	if((fps < 0) || ((fps > 0) && (fps < VIDEO_UTIL_MINIMUM_FPS)) || (fps > VIDEO_UTIL_MAXIMUM_FPS))
 	{
-		LOGE("invalid fps [%d]", fps);
+		video_util_error("invalid fps [%d]", fps);
 		return false;
 	}
 
@@ -210,27 +225,29 @@ static bool __video_util_check_fps(int fps)
 
 static video_util_error_e __video_util_error_convert(int error)
 {
-	LOGI("error [%d]\n", error);
-
 	if(error == MM_ERROR_NONE)
 	{
+		video_util_debug("Error None");
 		return VIDEO_UTIL_ERROR_NONE;
 	}
-	else if(error == MM_ERROR_INVALID_ARGUMENT)
+	else if(error == MM_ERROR_TRANSCODE_INVALID_VALUE)
 	{
-		LOGE("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
+		video_util_error("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
 		return VIDEO_UTIL_ERROR_INVALID_PARAMETER;
+	} else if(error == MM_ERROR_TRANSCODE_NOT_SUPPORT_FORMAT)
+	{
+		video_util_error("NOT_SUPPORTED_FORMAT(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED_FORMAT);
+			return VIDEO_UTIL_ERROR_NOT_SUPPORTED_FORMAT;
 	}
 	else
 	{
-		LOGE("INVALID_OPERATION(0x%08x)", VIDEO_UTIL_ERROR_INVALID_OPERATION);
+		video_util_error("INVALID_OPERATION(0x%08x)", error);
 		return VIDEO_UTIL_ERROR_INVALID_OPERATION;
 	}
 }
 
 static void __video_util_transcode_progress_cb(unsigned long current_position, unsigned long duration, void *user_data)
 {
-	int error_value = VIDEO_UTIL_ERROR_NONE;
 	video_util_cb_s *_util_cb = (video_util_cb_s *)user_data;
 
 	if((_util_cb != NULL) && (_util_cb->transcode_progress_cb != NULL))
@@ -293,8 +310,8 @@ static int __video_util_foreach_supported_type(video_util_type_e type, video_uti
 	}
 	else
 	{
-		LOGE("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
-		return VIDEO_UTIL_ERROR_INVALID_PARAMETER;
+		video_util_error("Invalid type (%d)", type);
+		ret = VIDEO_UTIL_ERROR_INVALID_PARAMETER;
 	}
 
 	UTIL_SAFE_FREE(codec_cb);
@@ -306,18 +323,27 @@ int video_util_create(video_util_h *handle)
 {
 	int ret = VIDEO_UTIL_ERROR_NONE;
 
-	LOGI("enter \n");
+	bool transcoder_supported = false;
+	if (0 == system_info_get_platform_bool(TRANSCODER_FEATURE_PATH, &transcoder_supported)) {
+		if (false == transcoder_supported) {
+			video_util_error("VIDEO_UTIL_ERROR_NOT_SUPPORTED(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED);
+			return VIDEO_UTIL_ERROR_NOT_SUPPORTED;
+		}
+	} else {
+		video_util_error("Error - System Info of Platform(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED);
+		return VIDEO_UTIL_ERROR_NOT_SUPPORTED;
+	}
 
 	if(handle == NULL)
 	{
-		LOGE("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
+		video_util_error("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
 		return VIDEO_UTIL_ERROR_INVALID_PARAMETER;
 	}
 
 	video_util_s *_handle = (video_util_s*)calloc(1,sizeof(video_util_s));
 	if(_handle == NULL)
 	{
-		LOGE("OUT_OF_MEMORY(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
+		video_util_error("OUT_OF_MEMORY(0x%08x)", VIDEO_UTIL_ERROR_OUT_OF_MEMORY);
 		return VIDEO_UTIL_ERROR_OUT_OF_MEMORY;
 	}
 
@@ -330,10 +356,9 @@ int video_util_create(video_util_h *handle)
 	_handle->height = 0;
 	_handle->fps = 0;
 	_handle->transcode_h = 0;
+	_handle->_util_cb = NULL;
 
 	*handle = (video_util_h)_handle;
-
-	LOGI("leave \n");
 
 	return ret;
 }
@@ -341,22 +366,31 @@ int video_util_create(video_util_h *handle)
 int video_util_destroy(video_util_h handle)
 {
 	int ret = VIDEO_UTIL_ERROR_NONE;
-	video_util_s *_handle = (video_util_s*)handle;
+	video_util_s *_handle = NULL;
+	bool transcoder_supported = false;
+	if (0 == system_info_get_platform_bool(TRANSCODER_FEATURE_PATH, &transcoder_supported)) {
+		if (false == transcoder_supported) {
+			video_util_error("VIDEO_UTIL_ERROR_NOT_SUPPORTED(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED);
+			return VIDEO_UTIL_ERROR_NOT_SUPPORTED;
+		}
+	} else {
+		video_util_error("Error - System Info of Platform(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED);
+		return VIDEO_UTIL_ERROR_NOT_SUPPORTED;
+	}
 
-	LOGI("enter \n");
-
-	if(!_handle)
+	_handle = (video_util_s*)handle;
+	if(_handle == NULL)
 	{
-		LOGE("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
+		video_util_error("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
 		return VIDEO_UTIL_ERROR_INVALID_PARAMETER;
 	}
 
 	ret = __video_util_destroy_transcode_handle(_handle);
 
+	UTIL_SAFE_FREE(_handle->_util_cb);
+	video_util_debug("FREE(_handle->_util_cb)");
 	UTIL_SAFE_FREE(_handle->input_path);
 	UTIL_SAFE_FREE(_handle);
-
-	LOGI("leave \n");
 
 	return ret;
 }
@@ -364,12 +398,23 @@ int video_util_destroy(video_util_h handle)
 int video_util_set_file_path(video_util_h handle, const char *file_path)
 {
 	int ret = VIDEO_UTIL_ERROR_NONE;
-	video_util_s *_handle = (video_util_s*)handle;
+	video_util_s *_handle = NULL;
 	bool is_busy = false;
+	bool transcoder_supported = false;
+	if (0 == system_info_get_platform_bool(TRANSCODER_FEATURE_PATH, &transcoder_supported)) {
+		if (false == transcoder_supported) {
+			video_util_error("VIDEO_UTIL_ERROR_NOT_SUPPORTED(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED);
+			return VIDEO_UTIL_ERROR_NOT_SUPPORTED;
+		}
+	} else {
+		video_util_error("Error - System Info of Platform(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED);
+		return VIDEO_UTIL_ERROR_NOT_SUPPORTED;
+	}
 
+	_handle = (video_util_s*)handle;
 	if((_handle != NULL) && (UTIL_STRING_VALID(file_path)))
 	{
-		LOGI("file_path [%s]\n", file_path);
+		video_util_secure_info("file_path [%s]\n", file_path);
 
 		if(_handle->input_path != NULL)
 		{
@@ -379,7 +424,7 @@ int video_util_set_file_path(video_util_h handle, const char *file_path)
 
 			if(is_busy)
 			{
-				LOGE("BUSY!! Transcoding is already running.\n");
+				video_util_error("BUSY!! Transcoding is already running.\n");
 				return VIDEO_UTIL_ERROR_BUSY;
 			}
 			else
@@ -395,43 +440,13 @@ int video_util_set_file_path(video_util_h handle, const char *file_path)
 		_handle->input_path = strdup(file_path);
 		if(_handle->input_path == NULL)
 		{
-			LOGE("OUT_OF_MEMORY(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
+			video_util_error("OUT_OF_MEMORY(0x%08x)", VIDEO_UTIL_ERROR_OUT_OF_MEMORY);
 			return VIDEO_UTIL_ERROR_OUT_OF_MEMORY;
 		}
 	}
 	else
 	{
-		LOGE("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
-		return VIDEO_UTIL_ERROR_INVALID_PARAMETER;
-	}
-
-	return ret;
-}
-
-int video_util_get_file_path(video_util_h handle, char **file_path)
-{
-	int ret = VIDEO_UTIL_ERROR_NONE;
-	video_util_s *_handle = (video_util_s*)handle;
-
-	if(_handle && file_path)
-	{
-		if(UTIL_STRING_VALID(_handle->input_path))
-		{
-			*file_path = strdup(_handle->input_path);
-			if(*file_path == NULL)
-			{
-				LOGE("OUT_OF_MEMORY(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
-				return VIDEO_UTIL_ERROR_OUT_OF_MEMORY;
-			}
-		}
-		else
-		{
-			*file_path = NULL;
-		}
-	}
-	else
-	{
-		LOGE("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
+		video_util_error("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
 		return VIDEO_UTIL_ERROR_INVALID_PARAMETER;
 	}
 
@@ -441,35 +456,26 @@ int video_util_get_file_path(video_util_h handle, char **file_path)
 int video_util_set_accurate_mode(video_util_h handle, bool accurate_mode)
 {
 	int ret = VIDEO_UTIL_ERROR_NONE;
-	video_util_s *_handle = (video_util_s*)handle;
+	video_util_s *_handle = NULL;
+	bool transcoder_supported = false;
+	if (0 == system_info_get_platform_bool(TRANSCODER_FEATURE_PATH, &transcoder_supported)) {
+		if (false == transcoder_supported) {
+			video_util_error("VIDEO_UTIL_ERROR_NOT_SUPPORTED(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED);
+			return VIDEO_UTIL_ERROR_NOT_SUPPORTED;
+		}
+	} else {
+		video_util_error("Error - System Info of Platform(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED);
+		return VIDEO_UTIL_ERROR_NOT_SUPPORTED;
+	}
 
-	LOGI("accurate_mode [%d]\n", accurate_mode);
-
+	_handle = (video_util_s*)handle;
 	if(_handle != NULL)
 	{
 		_handle->accurate_mode= accurate_mode;
 	}
 	else
 	{
-		LOGE("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
-		return VIDEO_UTIL_ERROR_INVALID_PARAMETER;
-	}
-
-	return ret;
-}
-
-int video_util_get_accurate_mode(video_util_h handle, bool *accurate_mode)
-{
-	int ret = VIDEO_UTIL_ERROR_NONE;
-	video_util_s *_handle = (video_util_s*)handle;
-
-	if(_handle && accurate_mode)
-	{
-		*accurate_mode = _handle->accurate_mode;
-	}
-	else
-	{
-		LOGE("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
+		video_util_error("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
 		return VIDEO_UTIL_ERROR_INVALID_PARAMETER;
 	}
 
@@ -479,11 +485,20 @@ int video_util_get_accurate_mode(video_util_h handle, bool *accurate_mode)
 int video_util_set_video_codec(video_util_h handle, video_util_video_codec_e codec)
 {
 	int ret = VIDEO_UTIL_ERROR_NONE;
-	video_util_s *_handle = (video_util_s*)handle;
+	video_util_s *_handle = NULL;
 	bool is_busy = false;
+	bool transcoder_supported = false;
+	if (0 == system_info_get_platform_bool(TRANSCODER_FEATURE_PATH, &transcoder_supported)) {
+		if (false == transcoder_supported) {
+			video_util_error("VIDEO_UTIL_ERROR_NOT_SUPPORTED(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED);
+			return VIDEO_UTIL_ERROR_NOT_SUPPORTED;
+		}
+	} else {
+		video_util_error("Error - System Info of Platform(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED);
+		return VIDEO_UTIL_ERROR_NOT_SUPPORTED;
+	}
 
-	LOGI("video_codec [%d]\n", codec);
-
+	_handle = (video_util_s*)handle;
 	if((_handle != NULL) && (__video_util_check_video_codec(codec)))
 	{
 		ret = __video_util_check_transcode_is_busy(_handle, &is_busy);
@@ -492,7 +507,7 @@ int video_util_set_video_codec(video_util_h handle, video_util_video_codec_e cod
 
 		if(is_busy)
 		{
-			LOGE("BUSY!! Transcoding is already running.\n");
+			video_util_error("BUSY!! Transcoding is already running.\n");
 			return VIDEO_UTIL_ERROR_BUSY;
 		}
 		else
@@ -506,25 +521,7 @@ int video_util_set_video_codec(video_util_h handle, video_util_video_codec_e cod
 	}
 	else
 	{
-		LOGE("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
-		return VIDEO_UTIL_ERROR_INVALID_PARAMETER;
-	}
-
-	return ret;
-}
-
-int video_util_get_video_codec(video_util_h handle, video_util_video_codec_e *codec)
-{
-	int ret = VIDEO_UTIL_ERROR_NONE;
-	video_util_s *_handle = (video_util_s*)handle;
-
-	if(_handle && codec)
-	{
-		*codec = _handle->video_codec;
-	}
-	else
-	{
-		LOGE("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
+		video_util_error("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
 		return VIDEO_UTIL_ERROR_INVALID_PARAMETER;
 	}
 
@@ -534,11 +531,20 @@ int video_util_get_video_codec(video_util_h handle, video_util_video_codec_e *co
 int video_util_set_audio_codec(video_util_h handle, video_util_audio_codec_e codec)
 {
 	int ret = VIDEO_UTIL_ERROR_NONE;
-	video_util_s *_handle = (video_util_s*)handle;
+	video_util_s *_handle = NULL;
 	bool is_busy = false;
+	bool transcoder_supported = false;
+	if (0 == system_info_get_platform_bool(TRANSCODER_FEATURE_PATH, &transcoder_supported)) {
+		if (false == transcoder_supported) {
+			video_util_error("VIDEO_UTIL_ERROR_NOT_SUPPORTED(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED);
+			return VIDEO_UTIL_ERROR_NOT_SUPPORTED;
+		}
+	} else {
+		video_util_error("Error - System Info of Platform(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED);
+		return VIDEO_UTIL_ERROR_NOT_SUPPORTED;
+	}
 
-	LOGI("audio_codec [%d]\n", codec);
-
+	_handle = (video_util_s*)handle;
 	if((_handle != NULL) && (__video_util_check_audio_codec(codec)))
 	{
 		ret = __video_util_check_transcode_is_busy(_handle, &is_busy);
@@ -547,7 +553,7 @@ int video_util_set_audio_codec(video_util_h handle, video_util_audio_codec_e cod
 
 		if(is_busy)
 		{
-			LOGE("BUSY!! Transcoding is already running.\n");
+			video_util_error("BUSY!! Transcoding is already running.\n");
 			return VIDEO_UTIL_ERROR_BUSY;
 		}
 		else
@@ -561,25 +567,7 @@ int video_util_set_audio_codec(video_util_h handle, video_util_audio_codec_e cod
 	}
 	else
 	{
-		LOGE("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
-		return VIDEO_UTIL_ERROR_INVALID_PARAMETER;
-	}
-
-	return ret;
-}
-
-int video_util_get_audio_codec(video_util_h handle, video_util_audio_codec_e *codec)
-{
-	int ret = VIDEO_UTIL_ERROR_NONE;
-	video_util_s *_handle = (video_util_s*)handle;
-
-	if(_handle && codec)
-	{
-		*codec = _handle->audio_codec;
-	}
-	else
-	{
-		LOGE("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
+		video_util_error("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
 		return VIDEO_UTIL_ERROR_INVALID_PARAMETER;
 	}
 
@@ -589,11 +577,20 @@ int video_util_get_audio_codec(video_util_h handle, video_util_audio_codec_e *co
 int video_util_set_file_format(video_util_h handle, video_util_file_format_e format)
 {
 	int ret = VIDEO_UTIL_ERROR_NONE;
-	video_util_s *_handle = (video_util_s*)handle;
+	video_util_s *_handle = NULL;
 	bool is_busy = false;
+	bool transcoder_supported = false;
+	if (0 == system_info_get_platform_bool(TRANSCODER_FEATURE_PATH, &transcoder_supported)) {
+		if (false == transcoder_supported) {
+			video_util_error("VIDEO_UTIL_ERROR_NOT_SUPPORTED(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED);
+			return VIDEO_UTIL_ERROR_NOT_SUPPORTED;
+		}
+	} else {
+		video_util_error("Error - System Info of Platform(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED);
+		return VIDEO_UTIL_ERROR_NOT_SUPPORTED;
+	}
 
-	LOGI("file_format [%d]\n", format);
-
+	_handle = (video_util_s*)handle;
 	if((_handle != NULL) && (__video_util_check_file_format(format)))
 	{
 		ret = __video_util_check_transcode_is_busy(_handle, &is_busy);
@@ -602,7 +599,7 @@ int video_util_set_file_format(video_util_h handle, video_util_file_format_e for
 
 		if(is_busy)
 		{
-			LOGE("BUSY!! Transcoding is already running.\n");
+			video_util_error("BUSY!! Transcoding is already running.\n");
 			return VIDEO_UTIL_ERROR_BUSY;
 		}
 		else
@@ -616,25 +613,7 @@ int video_util_set_file_format(video_util_h handle, video_util_file_format_e for
 	}
 	else
 	{
-		LOGE("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
-		return VIDEO_UTIL_ERROR_INVALID_PARAMETER;
-	}
-
-	return ret;
-}
-
-int video_util_get_file_format(video_util_h handle, video_util_file_format_e *format)
-{
-	int ret = VIDEO_UTIL_ERROR_NONE;
-	video_util_s *_handle = (video_util_s*)handle;
-
-	if(_handle && format)
-	{
-		*format = _handle->file_format;
-	}
-	else
-	{
-		LOGE("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
+		video_util_error("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
 		return VIDEO_UTIL_ERROR_INVALID_PARAMETER;
 	}
 
@@ -644,10 +623,19 @@ int video_util_get_file_format(video_util_h handle, video_util_file_format_e *fo
 int video_util_set_resolution(video_util_h handle, int width, int height)
 {
 	int ret = VIDEO_UTIL_ERROR_NONE;
-	video_util_s *_handle = (video_util_s*)handle;
+	video_util_s *_handle = NULL;
+	bool transcoder_supported = false;
+	if (0 == system_info_get_platform_bool(TRANSCODER_FEATURE_PATH, &transcoder_supported)) {
+		if (false == transcoder_supported) {
+			video_util_error("VIDEO_UTIL_ERROR_NOT_SUPPORTED(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED);
+			return VIDEO_UTIL_ERROR_NOT_SUPPORTED;
+		}
+	} else {
+		video_util_error("Error - System Info of Platform(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED);
+		return VIDEO_UTIL_ERROR_NOT_SUPPORTED;
+	}
 
-	LOGI("width [%d] height [%d]\n", width, height);
-
+	_handle = (video_util_s*)handle;
 	if((_handle != NULL) && (__video_util_check_resolution(width, height)))
 	{
 		_handle->width= width;
@@ -655,26 +643,7 @@ int video_util_set_resolution(video_util_h handle, int width, int height)
 	}
 	else
 	{
-		LOGE("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
-		return VIDEO_UTIL_ERROR_INVALID_PARAMETER;
-	}
-
-	return ret;
-}
-
-int video_util_get_resolution(video_util_h handle, int *width, int *height)
-{
-	int ret = VIDEO_UTIL_ERROR_NONE;
-	video_util_s *_handle = (video_util_s*)handle;
-
-	if(_handle && width && height)
-	{
-		*width = _handle->width;
-		*height = _handle->height;
-	}
-	else
-	{
-		LOGE("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
+		video_util_error("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
 		return VIDEO_UTIL_ERROR_INVALID_PARAMETER;
 	}
 
@@ -684,15 +653,26 @@ int video_util_get_resolution(video_util_h handle, int *width, int *height)
 int video_util_set_fps(video_util_h handle, int fps)
 {
 	int ret = VIDEO_UTIL_ERROR_NONE;
-	video_util_s *_handle = (video_util_s*)handle;
+	video_util_s *_handle = NULL;
+	bool transcoder_supported = false;
+	if (0 == system_info_get_platform_bool(TRANSCODER_FEATURE_PATH, &transcoder_supported)) {
+		if (false == transcoder_supported) {
+			video_util_error("VIDEO_UTIL_ERROR_NOT_SUPPORTED(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED);
+			return VIDEO_UTIL_ERROR_NOT_SUPPORTED;
+		}
+	} else {
+		video_util_error("Error - System Info of Platform(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED);
+		return VIDEO_UTIL_ERROR_NOT_SUPPORTED;
+	}
 
+	_handle = (video_util_s*)handle;
 	if(_handle && __video_util_check_fps(fps))
 	{
 		_handle->fps= fps;
 	}
 	else
 	{
-		LOGE("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
+		video_util_error("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
 		return VIDEO_UTIL_ERROR_INVALID_PARAMETER;
 	}
 
@@ -702,11 +682,22 @@ int video_util_set_fps(video_util_h handle, int fps)
 int video_util_start_transcoding(video_util_h handle, unsigned long start, unsigned long duration, const char *out_path, video_util_transcoding_progress_cb progress_cb, video_util_transcoding_completed_cb completed_cb,void *user_data)
 {
 	int ret = VIDEO_UTIL_ERROR_NONE;
-	video_util_s *_handle = (video_util_s*)handle;
+	video_util_s *_handle = NULL;
 	mm_seek_mode_e accurate_mode = MM_SEEK_NUM;
 	bool is_busy = false;
+	bool transcoder_supported = false;
+	if (0 == system_info_get_platform_bool(TRANSCODER_FEATURE_PATH, &transcoder_supported)) {
+		if (false == transcoder_supported) {
+			video_util_error("VIDEO_UTIL_ERROR_NOT_SUPPORTED(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED);
+			return VIDEO_UTIL_ERROR_NOT_SUPPORTED;
+		}
+	} else {
+		video_util_error("Error - System Info of Platform(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED);
+		return VIDEO_UTIL_ERROR_NOT_SUPPORTED;
+	}
 
-	LOGI("start [%d] duration [%d]\n", start, duration);
+	_handle = (video_util_s*)handle;
+	video_util_debug("start [%d] duration [%d]\n", start, duration);
 
 	if(_handle && (__video_util_check_duration(duration)) && (UTIL_STRING_VALID(_handle->input_path)) && (UTIL_STRING_VALID(out_path)) && completed_cb)
 	{
@@ -720,7 +711,7 @@ int video_util_start_transcoding(video_util_h handle, unsigned long start, unsig
 
 			if(!_handle->transcode_h)
 			{
-				LOGE("INVALID_OPERATION(0x%08x)", VIDEO_UTIL_ERROR_INVALID_OPERATION);
+				video_util_error("INVALID_OPERATION(0x%08x)", VIDEO_UTIL_ERROR_INVALID_OPERATION);
 				return VIDEO_UTIL_ERROR_INVALID_OPERATION;
 			}
 		}
@@ -732,43 +723,53 @@ int video_util_start_transcoding(video_util_h handle, unsigned long start, unsig
 
 			if(is_busy)
 			{
-				LOGE("BUSY!! Transcoding is already running.\n");
+				video_util_error("BUSY!! Transcoding is already running.\n");
 				return VIDEO_UTIL_ERROR_BUSY;
 			}
 		}
 
-		LOGI("width [%d] height [%d] fps [%d]v_codec [%d] a_codec [%d] file_format [%d] accurate [%d]\n",
+		video_util_debug("width [%d] height [%d] fps [%d]v_codec [%d] a_codec [%d] file_format [%d] accurate [%d]\n",
 			_handle->width, _handle->height, _handle->fps, _handle->video_codec, _handle->audio_codec, _handle->file_format, _handle->accurate_mode);
 
-		video_util_cb_s *_util_cb = (video_util_cb_s*)calloc(1, sizeof(video_util_cb_s));
-		_util_cb->user_data = user_data;
-		_util_cb->transcode_completed_cb = completed_cb;
-		_util_cb->transcode_progress_cb = progress_cb;
+		_handle->_util_cb = (video_util_cb_s*)calloc(1, sizeof(video_util_cb_s));
+		if(!_handle->_util_cb) {
+			video_util_error("Error _util_cb");
+			return VIDEO_UTIL_ERROR_INVALID_PARAMETER;
+		}
+		_handle->_util_cb->user_data = user_data;
+		_handle->_util_cb->transcode_completed_cb = completed_cb;
+		_handle->_util_cb->transcode_progress_cb = progress_cb;
 
 		if(_handle->accurate_mode)
 			accurate_mode = MM_SEEK_ACCURATE;
 		else
 			accurate_mode = MM_SEEK_INACCURATE;
 
-		ret = mm_transcode(_handle->transcode_h, _handle->width, _handle->height, _handle->fps, start, duration, accurate_mode, out_path, (mm_transcode_progress_callback)__video_util_transcode_progress_cb, (mm_transcode_completed_callback)__video_util_transcode_completed_cb, (void *)_util_cb);
+		ret = mm_transcode(_handle->transcode_h, _handle->width, _handle->height, _handle->fps, start, duration, accurate_mode, out_path, (mm_transcode_progress_callback)__video_util_transcode_progress_cb, (mm_transcode_completed_callback)__video_util_transcode_completed_cb, (void *)_handle->_util_cb);
 
 		if(ret != MM_ERROR_NONE)
 		{
-			if(ret == MM_ERROR_INVALID_ARGUMENT)
+			UTIL_SAFE_FREE(_handle->_util_cb);
+
+			if(ret == MM_ERROR_TRANSCODE_INVALID_VALUE)
 			{
-				LOGE("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
+				video_util_error("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
 				return VIDEO_UTIL_ERROR_INVALID_PARAMETER;
+			} else if(ret == MM_ERROR_TRANSCODE_NOT_SUPPORT_FORMAT)
+			{
+				video_util_error("NOT_SUPPORTED_FORMAT(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED_FORMAT);
+				return VIDEO_UTIL_ERROR_NOT_SUPPORTED_FORMAT;
 			}
 			else
 			{
-				LOGE("INVALID_OPERATION(0x%08x)", VIDEO_UTIL_ERROR_INVALID_OPERATION);
+				video_util_error("INVALID_OPERATION(0x%08x)", ret);
 				return VIDEO_UTIL_ERROR_INVALID_OPERATION;
 			}
 		}
 	}
 	else
 	{
-		LOGE("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
+		video_util_error("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
 		return VIDEO_UTIL_ERROR_INVALID_PARAMETER;
 	}
 
@@ -778,22 +779,36 @@ int video_util_start_transcoding(video_util_h handle, unsigned long start, unsig
 int video_util_cancel_transcoding(video_util_h handle)
 {
 	int ret = VIDEO_UTIL_ERROR_NONE;
-	video_util_s *_handle = (video_util_s*)handle;
+	video_util_s *_handle = NULL;
+	bool transcoder_supported = false;
+	if (0 == system_info_get_platform_bool(TRANSCODER_FEATURE_PATH, &transcoder_supported)) {
+		if (false == transcoder_supported) {
+			video_util_error("VIDEO_UTIL_ERROR_NOT_SUPPORTED(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED);
+			return VIDEO_UTIL_ERROR_NOT_SUPPORTED;
+		}
+	} else {
+		video_util_error("Error - System Info of Platform(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED);
+		return VIDEO_UTIL_ERROR_NOT_SUPPORTED;
+	}
 
+	_handle = (video_util_s*)handle;
 	if(_handle && (_handle->transcode_h))
 	{
 		ret = mm_transcode_cancel(_handle->transcode_h);
 		if(ret != MM_ERROR_NONE)
 		{
-			LOGE("INVALID_OPERATION(0x%08x)", VIDEO_UTIL_ERROR_INVALID_OPERATION);
+			video_util_error("INVALID_OPERATION(0x%08x)", ret);
 			return VIDEO_UTIL_ERROR_INVALID_OPERATION;
 		}
 	}
 	else
 	{
-		LOGE("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
+		video_util_error("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
 		return VIDEO_UTIL_ERROR_INVALID_PARAMETER;
 	}
+
+	UTIL_SAFE_FREE(_handle->_util_cb);
+	video_util_debug("FREE(_handle->_util_cb)");
 
 	return ret;
 }
@@ -801,9 +816,20 @@ int video_util_cancel_transcoding(video_util_h handle)
 int video_util_get_progress_transcoding(video_util_h handle, unsigned long *current_position, unsigned long *duration)
 {
 	int ret = VIDEO_UTIL_ERROR_NONE;
-	video_util_s *_handle = (video_util_s*)handle;
+	video_util_s *_handle = NULL;
 	int value = 0;
+	bool transcoder_supported = false;
+	if (0 == system_info_get_platform_bool(TRANSCODER_FEATURE_PATH, &transcoder_supported)) {
+		if (false == transcoder_supported) {
+			video_util_error("VIDEO_UTIL_ERROR_NOT_SUPPORTED(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED);
+			return VIDEO_UTIL_ERROR_NOT_SUPPORTED;
+		}
+	} else {
+		video_util_error("Error - System Info of Platform(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED);
+		return VIDEO_UTIL_ERROR_NOT_SUPPORTED;
+	}
 
+	_handle = (video_util_s*)handle;
 	if(_handle && current_position && duration)
 	{
 		if(_handle->transcode_h)
@@ -812,19 +838,19 @@ int video_util_get_progress_transcoding(video_util_h handle, unsigned long *curr
 										current_position, duration, (unsigned int *)&value, (unsigned int *)&value);
 			if(ret != MM_ERROR_NONE)
 			{
-				LOGE("INVALID_OPERATION(0x%08x)", VIDEO_UTIL_ERROR_INVALID_OPERATION);
+				video_util_error("INVALID_OPERATION(0x%08x)", ret);
 				return VIDEO_UTIL_ERROR_INVALID_OPERATION;
 			}
 		}
 		else
 		{
-			LOGE("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
+			video_util_error("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
 			return VIDEO_UTIL_ERROR_INVALID_PARAMETER;
 		}
 	}
 	else
 	{
-		LOGE("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
+		video_util_error("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
 		return VIDEO_UTIL_ERROR_INVALID_PARAMETER;
 	}
 
@@ -834,15 +860,26 @@ int video_util_get_progress_transcoding(video_util_h handle, unsigned long *curr
 int video_util_foreach_supported_file_format(video_util_h handle, video_util_supported_file_format_cb callback, void *user_data)
 {
 	int ret = VIDEO_UTIL_ERROR_NONE;
-	video_util_s *_handle = (video_util_s*)handle;
+	video_util_s *_handle = NULL;
+	bool transcoder_supported = false;
+	if (0 == system_info_get_platform_bool(TRANSCODER_FEATURE_PATH, &transcoder_supported)) {
+		if (false == transcoder_supported) {
+			video_util_error("VIDEO_UTIL_ERROR_NOT_SUPPORTED(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED);
+			return VIDEO_UTIL_ERROR_NOT_SUPPORTED;
+		}
+	} else {
+		video_util_error("Error - System Info of Platform(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED);
+		return VIDEO_UTIL_ERROR_NOT_SUPPORTED;
+	}
 
+	_handle = (video_util_s*)handle;
 	if(_handle && callback)
 	{
 		ret = __video_util_foreach_supported_type(VIDEO_UTIL_TYPE_FORMAT, (video_util_supported_type_cb)callback, user_data);
 	}
 	else
 	{
-		LOGE("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
+		video_util_error("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
 		return VIDEO_UTIL_ERROR_INVALID_PARAMETER;
 	}
 
@@ -852,15 +889,22 @@ int video_util_foreach_supported_file_format(video_util_h handle, video_util_sup
 int video_util_foreach_supported_video_codec(video_util_h handle, video_util_supported_video_encoder_cb callback, void *user_data)
 {
 	int ret = VIDEO_UTIL_ERROR_NONE;
-	video_util_s *_handle = (video_util_s*)handle;
-
+	video_util_s *_handle = NULL;
+	bool transcoder_supported = false;
+	if (0 == system_info_get_platform_bool(TRANSCODER_FEATURE_PATH, &transcoder_supported)) {
+		if (false == transcoder_supported) {
+			video_util_error("VIDEO_UTIL_ERROR_NOT_SUPPORTED(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED);
+			return VIDEO_UTIL_ERROR_NOT_SUPPORTED;
+		}
+	}
+	_handle = (video_util_s*)handle;
 	if(_handle && callback)
 	{
 		ret = __video_util_foreach_supported_type(VIDEO_UTIL_TYPE_VIDEO_ENC, (video_util_supported_type_cb)callback, user_data);
 	}
 	else
 	{
-		LOGE("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
+		video_util_error("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
 		return VIDEO_UTIL_ERROR_INVALID_PARAMETER;
 	}
 
@@ -870,15 +914,26 @@ int video_util_foreach_supported_video_codec(video_util_h handle, video_util_sup
 int video_util_foreach_supported_audio_codec(video_util_h handle, video_util_supported_audio_encoder_cb callback, void *user_data)
 {
 	int ret = VIDEO_UTIL_ERROR_NONE;
-	video_util_s *_handle = (video_util_s*)handle;
+	video_util_s *_handle = NULL;
+	bool transcoder_supported = false;
+	if (0 == system_info_get_platform_bool(TRANSCODER_FEATURE_PATH, &transcoder_supported)) {
+		if (false == transcoder_supported) {
+			video_util_error("VIDEO_UTIL_ERROR_NOT_SUPPORTED(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED);
+			return VIDEO_UTIL_ERROR_NOT_SUPPORTED;
+		}
+	} else {
+		video_util_error("Error - System Info of Platform(0x%08x)", VIDEO_UTIL_ERROR_NOT_SUPPORTED);
+		return VIDEO_UTIL_ERROR_NOT_SUPPORTED;
+	}
 
+	_handle = (video_util_s*)handle;
 	if(_handle && callback)
 	{
 		ret = __video_util_foreach_supported_type(VIDEO_UTIL_TYPE_AUDIO_ENC, (video_util_supported_type_cb)callback, user_data);
 	}
 	else
 	{
-		LOGE("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
+		video_util_error("INVALID_PARAMETER(0x%08x)", VIDEO_UTIL_ERROR_INVALID_PARAMETER);
 		return VIDEO_UTIL_ERROR_INVALID_PARAMETER;
 	}
 

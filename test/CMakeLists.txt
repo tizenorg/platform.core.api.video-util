@@ -1,7 +1,7 @@
 SET(fw_test "${fw_name}-test")
 
 INCLUDE(FindPkgConfig)
-pkg_check_modules(${fw_test} REQUIRED glib-2.0 dlog capi-base-common mm-transcode)
+pkg_check_modules(${fw_test} REQUIRED glib-2.0 dlog capi-base-common capi-system-info mm-transcode)
 FOREACH(flag ${${fw_test}_CFLAGS})
     SET(EXTRA_CFLAGS "${EXTRA_CFLAGS} ${flag}")
     MESSAGE(${flag})

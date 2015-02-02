@@ -19,23 +19,41 @@
 #define __TIZEN_VIDEO_UTIL_PRIVATE_H__
 
 #include <stdbool.h>
-#include <video_util_type.h>
 #include <mm_types.h>
+#include <dlog.h>
+#include <video_util_type.h>
+
+#ifdef LOG_TAG
+#undef LOG_TAG
+#endif
+
+#define LOG_TAG "CAPI_MEDIA_VIDEO_UTIL"
+
+#define video_util_debug(fmt, arg...) do { \
+			LOGD(""fmt"", ##arg);     \
+		} while (0)
+
+#define video_util_info(fmt, arg...) do { \
+			LOGI(""fmt"", ##arg);     \
+		} while (0)
+
+#define video_util_error(fmt, arg...) do { \
+			LOGE(""fmt"", ##arg);     \
+		} while (0)
+
+#define video_util_debug_fenter() do { \
+			LOGD("<Enter>");     \
+		} while (0)
+
+#define video_util_debug_fleave() do { \
+			LOGD("<Leave>");     \
+		} while (0)
+
+#define video_util_secure_info(fmt, arg...) do { \
+			SECURE_LOGI(""fmt"", ##arg);     \
+		} while (0)
 
 typedef bool (*video_util_supported_type_cb)(int type, void *user_data);
-
-typedef struct
-{
-	char *input_path;
-	bool accurate_mode;
-	video_util_video_codec_e video_codec;
-	video_util_audio_codec_e audio_codec;
-	video_util_file_format_e file_format;
-	int width;
-	int height;
-	int fps;
-	MMHandleType transcode_h;
-}video_util_s;
 
 typedef struct
 {
@@ -49,6 +67,21 @@ typedef struct
 	void *user_data;
 	video_util_supported_type_cb supported_type_cb;
 }video_util_type_cb_s;
+
+typedef struct
+{
+	char *input_path;
+	bool accurate_mode;
+	video_util_video_codec_e video_codec;
+	video_util_audio_codec_e audio_codec;
+	video_util_file_format_e file_format;
+	int width;
+	int height;
+	int fps;
+	unsigned long bps;
+	MMHandleType transcode_h;
+	video_util_cb_s *_util_cb;
+}video_util_s;
 
 typedef enum
 {

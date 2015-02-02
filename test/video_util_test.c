@@ -47,7 +47,8 @@ void test_transcode_completed_cb(video_util_error_e error, void *user_data)
 
 	if(_util_s->idx == (g_make_video_cnt-1))
 	{
-		g_main_loop_quit(g_loop);
+		if(g_loop)
+			g_main_loop_quit(g_loop);
 		return;
 	}
 
@@ -67,7 +68,8 @@ void test_transcode_completed_cb(video_util_error_e error, void *user_data)
 		if(ret != VIDEO_UTIL_ERROR_NONE)
 		{
 			printf("[%d]error video_util_cancel_transcoding [%d]\n", __LINE__, ret);
-			g_main_loop_quit(g_loop);
+			if(g_loop)
+				g_main_loop_quit(g_loop);
 			return;
 		}
 
@@ -107,18 +109,18 @@ bool supported_spec_check(video_util_h handle)
 {
 	int ret = 0;
 	ret = video_util_foreach_supported_file_format(handle, (video_util_supported_file_format_cb)test_transcode_spec_cb, "format_check");
-	printf("[%d] video_util_foreach_supported_file_format [%d]\n", __LINE__, ret);
+	printf("video_util_foreach_supported_file_format [%d]\n", ret);
 	ret = video_util_foreach_supported_video_codec(handle, (video_util_supported_video_encoder_cb)test_transcode_spec_cb, "video_codec_check");
-	printf("[%d] video_util_foreach_supported_video_codec [%d]\n", __LINE__, ret);
+	printf("video_util_foreach_supported_video_codec [%d]\n", ret);
 	ret = video_util_foreach_supported_audio_codec(handle, (video_util_supported_audio_encoder_cb)test_transcode_spec_cb, "audio_codec_check");
-	printf("[%d] video_util_foreach_supported_audio_codec [%d]\n", __LINE__, ret);
+	printf("video_util_foreach_supported_audio_codec [%d]\n", ret);
 
 	return true;
 }
 
 static int test_transcode_do(test_util_s *util_s)
 {
-	int ret = 0;
+	int ret = VIDEO_UTIL_ERROR_NONE;
 	char test_output_file_path[128] = {0, };
 
 	memset(test_output_file_path, 0x00, sizeof(test_output_file_path));
@@ -130,7 +132,8 @@ static int test_transcode_do(test_util_s *util_s)
 	if(ret != VIDEO_UTIL_ERROR_NONE)
 	{
 		printf("[%d]error video_util_start_transcoding [%d]\n", __LINE__, ret);
-		g_main_loop_quit(g_loop);
+		if(g_loop)
+			g_main_loop_quit(g_loop);
 		return ret;
 	}
 
@@ -186,13 +189,16 @@ int main(int argc, char *argv[])
 	_util_s->start_time = 0;
 	_util_s->duration = g_duration;
 
-	test_transcode_do(_util_s);
+	ret = test_transcode_do(_util_s);
+	if(ret != VIDEO_UTIL_ERROR_NONE)
+		goto Exit;
 
 	g_loop = g_main_loop_new(NULL, FALSE);
 
 	g_main_loop_run(g_loop);
 	g_main_loop_unref(g_loop);
 
+Exit:
 	ret = video_util_destroy(video_h);	//destory handle in cb
 	if(ret != VIDEO_UTIL_ERROR_NONE)
 	{

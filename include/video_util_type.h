@@ -14,7 +14,6 @@
 * limitations under the License.
 */
 
-
 #ifndef __TIZEN_MEDIA_VIDEO_UTIL_TYPE_H__
 #define __TIZEN_MEDIA_VIDEO_UTIL_TYPE_H__
 
@@ -44,16 +43,15 @@ extern "C" {
  * @brief Enumeration for errors of a video util.
  * @since_tizen 2.3
  */
-typedef enum
-{
-	VIDEO_UTIL_ERROR_NONE					= TIZEN_ERROR_NONE,				/**< Successful */
-	VIDEO_UTIL_ERROR_INVALID_PARAMETER		= TIZEN_ERROR_INVALID_PARAMETER,	/**< Invalid parameter */
-	VIDEO_UTIL_ERROR_OUT_OF_MEMORY			= TIZEN_ERROR_OUT_OF_MEMORY,		/**< Out of memory */
-	VIDEO_UTIL_ERROR_INVALID_OPERATION			= TIZEN_ERROR_INVALID_OPERATION,	/**< Invalid operation */
-	VIDEO_UTIL_ERROR_BUSY						= TIZEN_ERROR_RESOURCE_BUSY,	/**< Device or resource busy */
-	VIDEO_UTIL_ERROR_NOT_SUPPORTED_FORMAT	= TIZEN_ERROR_VIDEO_UTIL | 0x01,	/**< Not supported format */
-	VIDEO_UTIL_ERROR_PERMISSION_DENIED			= TIZEN_ERROR_PERMISSION_DENIED,	/**< Permission denied  */
-	VIDEO_UTIL_ERROR_NOT_SUPPORTED 			= TIZEN_ERROR_NOT_SUPPORTED	/**< Not supported */
+typedef enum {
+	VIDEO_UTIL_ERROR_NONE = TIZEN_ERROR_NONE,							/**< Successful */
+	VIDEO_UTIL_ERROR_INVALID_PARAMETER = TIZEN_ERROR_INVALID_PARAMETER,		/**< Invalid parameter */
+	VIDEO_UTIL_ERROR_OUT_OF_MEMORY = TIZEN_ERROR_OUT_OF_MEMORY,				/**< Out of memory */
+	VIDEO_UTIL_ERROR_INVALID_OPERATION = TIZEN_ERROR_INVALID_OPERATION,			/**< Invalid operation */
+	VIDEO_UTIL_ERROR_BUSY = TIZEN_ERROR_RESOURCE_BUSY,						/**< Device or resource busy */
+	VIDEO_UTIL_ERROR_NOT_SUPPORTED_FORMAT = TIZEN_ERROR_VIDEO_UTIL | 0x01,	/**< Not supported format */
+	VIDEO_UTIL_ERROR_PERMISSION_DENIED = TIZEN_ERROR_PERMISSION_DENIED,			/**< Permission denied  */
+	VIDEO_UTIL_ERROR_NOT_SUPPORTED = TIZEN_ERROR_NOT_SUPPORTED		/**< Not supported */
 } video_util_error_e;
 
 /**
@@ -61,39 +59,34 @@ typedef enum
  * @brief Enumeration for video codec.
  * @since_tizen 2.3
  */
-typedef enum
-{
-	VIDEO_UTIL_VIDEO_CODEC_MPEG4 = 0,		/**< MPEG4 */
-	VIDEO_UTIL_VIDEO_CODEC_H263,			/**< H.263 */
-	VIDEO_UTIL_VIDEO_CODEC_H264,			/**< H.264 */
-	VIDEO_UTIL_VIDEO_CODEC_NONE			/**< No transcoding for video */
-
-}video_util_video_codec_e;
+typedef enum {
+	VIDEO_UTIL_VIDEO_CODEC_MPEG4 = 0,	/**< MPEG4 */
+	VIDEO_UTIL_VIDEO_CODEC_H263,		/**< H.263 */
+	VIDEO_UTIL_VIDEO_CODEC_H264,		/**< H.264 */
+	VIDEO_UTIL_VIDEO_CODEC_NONE		/**< No transcoding for video */
+} video_util_video_codec_e;
 
 /**
  * @ingroup CAPI_MEDIA_VIDEO_UTIL_MODULE
  * @brief Enumeration for audio codec.
  * @since_tizen 2.3
  */
-typedef enum
-{
-	VIDEO_UTIL_AUDIO_CODEC_AAC	= 0,		/**< AAC */
-	VIDEO_UTIL_AUDIO_CODEC_AMRNB,		/**< AMRNB */
-	VIDEO_UTIL_AUDIO_CODEC_NONE			/**< No transcoding for audio */
-}video_util_audio_codec_e;
-
+typedef enum {
+	VIDEO_UTIL_AUDIO_CODEC_AAC = 0,		/**< AAC */
+	VIDEO_UTIL_AUDIO_CODEC_AMRNB,	/**< AMRNB */
+	VIDEO_UTIL_AUDIO_CODEC_NONE		/**< No transcoding for audio */
+} video_util_audio_codec_e;
 
 /**
  * @ingroup CAPI_MEDIA_VIDEO_UTIL_MODULE
  * @brief Enumeration for formats of a media.
  * @since_tizen 2.3
  */
-typedef enum
-{
-	VIDEO_UTIL_FILE_FORMAT_3GP	= 0,		/**< 3GP */
-	VIDEO_UTIL_FILE_FORMAT_MP4,			/**< MP4 */
-	VIDEO_UTIL_FILE_FORMAT_MAX			/**< MAX */
-}video_util_file_format_e;
+typedef enum {
+	VIDEO_UTIL_FILE_FORMAT_3GP = 0,		/**< 3GP */
+	VIDEO_UTIL_FILE_FORMAT_MP4,		/**< MP4 */
+	VIDEO_UTIL_FILE_FORMAT_MAX		/**< MAX */
+} video_util_file_format_e;
 
 /**
  * @ingroup CAPI_MEDIA_VIDEO_UTIL_MODULE
@@ -157,7 +150,7 @@ typedef bool (*video_util_supported_file_format_cb)(video_util_file_format_e for
  *
  * @pre video_util_foreach_supported_video_codec() will invoke this callback.
  */
-typedef bool (*video_util_supported_video_encoder_cb)(video_util_video_codec_e codec, void *user_data);
+typedef bool (*video_util_supported_video_encoder_cb) (video_util_video_codec_e codec, void *user_data);
 
 /**
  * @brief Called iteratively to notify you about the supported audio codec.
@@ -171,10 +164,9 @@ typedef bool (*video_util_supported_video_encoder_cb)(video_util_video_codec_e c
  *
  * @pre video_util_foreach_supported_audio_codec() will invoke this callback.
  */
-typedef bool (*video_util_supported_audio_encoder_cb)(video_util_audio_codec_e codec, void *user_data);
+typedef bool (*video_util_supported_audio_encoder_cb) (video_util_audio_codec_e codec, void *user_data);
 
 __attribute__ ((deprecated)) typedef bool (*video_util_progress_transcoding_cb)(video_util_error_e error, unsigned long current_position, unsigned long duration, void *user_data);
-
 
 /**
  * @}
@@ -183,6 +175,4 @@ __attribute__ ((deprecated)) typedef bool (*video_util_progress_transcoding_cb)(
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-
-
 #endif /*__TIZEN_MEDIA_VIDEO_UTIL_TYPE_H__*/

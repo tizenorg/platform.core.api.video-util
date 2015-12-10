@@ -14,13 +14,10 @@
 * limitations under the License.
 */
 
-
 #ifndef __TIZEN_MEDIA_VIDEO_UTIL_H__
 #define __TIZEN_MEDIA_VIDEO_UTIL_H__
 
-
 #include <video_util_type.h>
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -441,7 +438,6 @@ int video_util_foreach_supported_video_codec(video_util_h handle, video_util_sup
  */
 int video_util_foreach_supported_audio_codec(video_util_h handle, video_util_supported_audio_encoder_cb callback, void *user_data);
 
-
 /**
  * @}
  */
@@ -450,4 +446,4 @@ int video_util_foreach_supported_audio_codec(video_util_h handle, video_util_sup
 }
 #endif /* __cplusplus */
 
-#endif /*__TIZEN_MEDIA_VIDEO_UTIL_H__ */
+#endif /*_TIZEN_MEDIA_VIDEO_UTIL_H */

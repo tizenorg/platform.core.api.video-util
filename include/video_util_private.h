@@ -14,7 +14,6 @@
 * limitations under the License.
 */
 
-
 #ifndef __TIZEN_VIDEO_UTIL_PRIVATE_H__
 #define __TIZEN_VIDEO_UTIL_PRIVATE_H__
 
@@ -53,23 +52,20 @@
 			SECURE_LOGI(""fmt"", ##arg);     \
 		} while (0)
 
-typedef bool (*video_util_supported_type_cb)(int type, void *user_data);
+typedef bool(*video_util_supported_type_cb) (int type, void *user_data);
 
-typedef struct
-{
+typedef struct {
 	void *user_data;
 	video_util_transcoding_progress_cb transcode_progress_cb;
 	video_util_transcoding_completed_cb transcode_completed_cb;
-}video_util_cb_s;
+} video_util_cb_s;
 
-typedef struct
-{
+typedef struct {
 	void *user_data;
 	video_util_supported_type_cb supported_type_cb;
-}video_util_type_cb_s;
+} video_util_type_cb_s;
 
-typedef struct
-{
+typedef struct {
 	char *input_path;
 	bool accurate_mode;
 	video_util_video_codec_e video_codec;
@@ -81,13 +77,12 @@ typedef struct
 	unsigned long bps;
 	MMHandleType transcode_h;
 	video_util_cb_s *_util_cb;
-}video_util_s;
+} video_util_s;
 
-typedef enum
-{
-	VIDEO_UTIL_TYPE_FORMAT	= 0,
+typedef enum {
+	VIDEO_UTIL_TYPE_FORMAT = 0,
 	VIDEO_UTIL_TYPE_VIDEO_ENC,
 	VIDEO_UTIL_TYPE_AUDIO_ENC
-}video_util_type_e;
+} video_util_type_e;
 
 #endif /*__TIZEN_VIDEO_UTIL_PRIVATE_H__*/

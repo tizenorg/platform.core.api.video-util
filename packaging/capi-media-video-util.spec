@@ -3,7 +3,7 @@ Summary:    A Video Utility library in Tizen Native API
 Version:    0.1.7
 Release:    6
 Group:      System/Libraries
-License:    Apache License, Version 2.0
+License:    Apache-2.0
 Source0:    %{name}-%{version}.tar.gz
 Source1001: capi-media-video-util.manifest
 BuildRequires:  pkgconfig(dlog)
@@ -11,7 +11,6 @@ BuildRequires:  pkgconfig(mm-common)
 BuildRequires:  pkgconfig(mm-transcode)
 BuildRequires:  pkgconfig(capi-base-common)
 BuildRequires:  pkgconfig(capi-system-info)
-BuildRequires:  pkgconfig(appcore-efl)
 
 BuildRequires:  cmake
 BuildRequires:  gettext-devel

@@ -19,8 +19,6 @@
 #include <unistd.h>
 #include <glib.h>
 #include <dlog.h>
-#include <Elementary.h>
-#include <appcore-efl.h>
 #include <video_util.h>
 
 #define PACKAGE			"video_util_test"
@@ -72,26 +70,10 @@ typedef struct {
 
 static void display_sub_basic();
 
-static int _create_app(void *data)
-{
-	LOGD("My app is going alive!\n");
-	return 0;
-}
-
-static int _terminate_app(void *data)
-{
-	LOGD("My app is going gone!\n");
-	return 0;
-}
-
-struct appcore_ops ops = {
-	.create = _create_app,
-	.terminate = _terminate_app,
-};
 
 void _quit_program(void)
 {
-	elm_exit();
+	exit(0);
 }
 
 bool test_transcode_spec_cb(int value, void *user_data)
@@ -667,14 +649,17 @@ gboolean input(GIOChannel *channel)
 int main(int argc, char *argv[])
 {
 	GIOChannel *stdin_channel;
+	GMainLoop *loop = g_main_loop_new(NULL, 0);
 	stdin_channel = g_io_channel_unix_new(0);
 	g_io_channel_set_flags(stdin_channel, G_IO_FLAG_NONBLOCK, NULL);
 	g_io_add_watch(stdin_channel, G_IO_IN, (GIOFunc)input, NULL);
 
 	displaymenu();
 
-	ops.data = NULL;
+	g_main_loop_run(loop);
+	g_print("STOP main loop\n");
 
-	return appcore_efl_main(PACKAGE, &argc, &argv, &ops);
+	g_main_loop_unref(loop);
+	return 0;
 
 }

@@ -22,6 +22,7 @@
 #include <mm_error.h>
 #include <video_util.h>
 #include <video_util_private.h>
+#include <system_info.h>
 
 #ifdef LOG_TAG
 #undef LOG_TAG

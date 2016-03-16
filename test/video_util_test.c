@@ -69,7 +69,7 @@ typedef struct {
 } test_util_s;
 
 static void display_sub_basic();
-
+void _video_util_start_transcoding(test_util_s *util_s);
 
 void _quit_program(void)
 {
@@ -160,7 +160,7 @@ void _transcode_completed_cb(video_util_error_e error, void *user_data)
 	_util_s->idx = idx;
 	_util_s->start_time = ntn_start_position;
 
-	_video_util_start_transcoding((test_util_s *)_util_s);
+	_video_util_start_transcoding(_util_s);
 
 	return;
 }
@@ -236,6 +236,8 @@ void _video_util_start_transcoding(test_util_s *util_s)
 		LOGE("video_util_start_transcoding is failed (%d)", ret);
 		return;
 	}
+
+	return;
 }
 
 void _reset_var()
@@ -263,7 +265,6 @@ void _reset_var()
 static void input_filename(char *filename)
 {
 	int len = strlen(filename);
-	int i = 0;
 	int ret = VIDEO_UTIL_ERROR_NONE;
 
 	if (len < 0 || len > MAX_STRING_LEN) {
@@ -572,7 +573,6 @@ static void interpret(char *cmd)
 		}
 	case CURRENT_STATUS_SET_TIME:
 		{
-			int ret = VIDEO_UTIL_ERROR_NONE;
 			int value = atoi(cmd);
 			static int set_time_cnt = 0;
 

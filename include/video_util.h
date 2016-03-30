@@ -303,7 +303,7 @@ int video_util_set_fps(video_util_h handle, int fps);
  * @see video_util_get_progress_transcoding()
  * @see video_util_cancel_transcoding()
  */
-int video_util_start_transcoding(video_util_h handle, unsigned long start, unsigned long duration, const char *out_path, video_util_transcoding_progress_cb progress_cb, video_util_transcoding_completed_cb completed_cb,void *user_data);
+int video_util_start_transcoding(video_util_h handle, unsigned long start, unsigned long duration, const char *out_path, video_util_transcoding_progress_cb progress_cb, video_util_transcoding_completed_cb completed_cb, void *user_data);
 
 /**
  * @brief Cancels transcoding the video for given video util handle.
